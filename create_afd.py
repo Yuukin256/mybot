@@ -10,6 +10,7 @@ import pywikibot
 
 
 def main():
+    pywikibot.bot.writeToCommandLogFile()
     # 日付の指定
     now = datetime.datetime.now()
     date = now + datetime.timedelta(hours=9)  # 今の時刻に9時間足す
@@ -23,17 +24,20 @@ def main():
         '\n<noinclude>{{purge}} - </noinclude>{{削除依頼/ログ日付|date=' + d_string1 + '}} {{削除依頼/ログ作成}}'\
         '\n<!-- 新規の依頼はこの下に付け足してください -->'
 
-    if now.hour == 23 or 0:
-        # 23時か0時であれば削除依頼のログページを投稿
-        print('\n\nWikipedia:削除依頼/ログ/' + d_string2 + 'を作成します。')
+    if now.hour in [23, 0]:
+        # 23時か0時で
         site = pywikibot.Site()
         page = pywikibot.Page(site, 'Wikipedia:削除依頼/ログ/' + d_string2)
 
-        page.text = out_text
-        page.save(summary='Botによる: [[Wikipedia:削除依頼]]のログページ作成', minor=False)
-
+        if not page.exists():
+            # ページが存在しなければ
+            pywikibot.output('\n\nWikipedia:削除依頼/ログ/' + d_string2 + 'を作成します。')
+            page.text = out_text
+            page.save(summary='Botによる: [[Wikipedia:削除依頼]]のログページ作成', minor=False)
+        else:
+            pywikibot.output('\n\nWikipedia:削除依頼/ログ/' + d_string2 + 'は既に存在します。')
     else:
-        print('\n\n削除依頼ログページを作成すべき時刻ではないため、処理を終了します。')
+        pywikibot.output('\n\n削除依頼ログページを作成すべき時刻ではありません。')
 
 
 if __name__ == '__main__':
