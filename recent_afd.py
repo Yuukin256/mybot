@@ -8,7 +8,9 @@ import re
 import urllib
 
 import requests
+
 import pywikibot
+from pywikibot import config2 as config
 
 today = datetime.date.today()
 startdate = today - datetime.timedelta(days=1)
@@ -122,8 +124,11 @@ def main():
 
         pywikibot.output('\n参照読み込みされていないページがあります！\n[[利用者:YuukinBot2/最近の削除依頼]] へと結果を投稿します。')
 
-        site = pywikibot.Site()
+        site = pywikibot.Site(user='YuukinBit2')
+        site.login()
+
         page = pywikibot.Page(site, '利用者:YuukinBot2/最近の削除依頼')
+        config.put_throttle = 0
 
         page.text = out_text
         page.save(summary='Botによる: 最近作成された [[WP:AfD|削除依頼]] の一覧を生成', minor=False)
