@@ -124,14 +124,16 @@ def main():
 
         pywikibot.output('\n参照読み込みされていないページがあります！\n[[利用者:YuukinBot2/最近の削除依頼]] へと結果を投稿します。')
 
-        site = pywikibot.Site(user='YuukinBit2')
+        site = pywikibot.Site(user='YuukinBot2')
         site.login()
 
         page = pywikibot.Page(site, '利用者:YuukinBot2/最近の削除依頼')
         config.put_throttle = 0
+        now_text = page.get()
 
-        page.text = out_text
-        page.save(summary='Botによる: 最近作成された [[WP:AfD|削除依頼]] の一覧を生成', minor=False)
+        if now_text == out_text:
+            page.text = out_text
+            page.save(summary='Botによる: 最近作成された [[WP:AfD|削除依頼]] の一覧を生成', minor=False)
 
     else:
         pywikibot.output('参照読み込みされていないページはありませんでした。')
