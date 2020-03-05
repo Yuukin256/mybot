@@ -27,6 +27,7 @@ def main():
 
     if now.hour in [23, 0]:
         # 23時か0時で
+        config.put_throttle = 0
         site = pywikibot.Site(user='YuukinBot2')
         site.login()
 
@@ -35,7 +36,6 @@ def main():
         if not page.exists():
             # ページが存在しなければ
             pywikibot.output('\n\nWikipedia:削除依頼/ログ/' + d_string2 + 'を作成します。')
-            config.put_throttle = 0
 
             page.text = out_text
             page.save(summary='Botによる: [[Wikipedia:削除依頼]]のログページ作成', minor=False)
