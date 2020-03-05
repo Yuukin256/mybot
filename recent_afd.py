@@ -131,7 +131,7 @@ def main():
         config.put_throttle = 0
         now_text = page.get()
 
-        if now_text == out_text:
+        if now_text != out_text:
             page.text = out_text
             page.save(summary='Botによる: 最近作成された [[WP:AfD|削除依頼]] の一覧を生成', minor=False)
 
