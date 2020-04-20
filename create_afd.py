@@ -18,12 +18,13 @@ def main():
     d_string1 = date.strftime('%Y-%m-%d')  # yyyy-mm-dd 0埋め有り dateパラメータ用
     d_string2 = f'{date.year}年{date.month}月{date.day}日'  # yyyy年m月d日 0埋め無し ページ名用
     d_string3 = f'{date.month}月{date.day}日'  # m月d日 0埋め無し 節名用
+    out_text = f'== {d_string3} =='\
+        f'\n<noinclude>{{{{purge}}}} - </noinclude>{{{{削除依頼/ログ日付|date={d_string1}}}}} {{{{削除依頼/ログ作成}}}}'\
+        f'\n<!-- 新規の依頼はこの下に付け足してください -->'
 
-    out_text = '== ' + d_string3 + ' =='\
-        '\n<noinclude>{{purge}} - </noinclude>{{削除依頼/ログ日付|date=' + d_string1 + '}} {{削除依頼/ログ作成}}'\
-        '\n<!-- 新規の依頼はこの下に付け足してください -->'
+    can_create_time = (0, 23)
 
-    if now.hour in [23, 0]:
+    if now.hour in can_create_time:
         # 23時か0時で
         config.put_throttle = 0
         site = pywikibot.Site(user='YuukinBot2')
