@@ -1,4 +1,3 @@
-.vscode/
 test*
 logs/
 throttle.ctrl
