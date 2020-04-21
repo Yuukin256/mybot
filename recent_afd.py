@@ -3,16 +3,55 @@
 
 import datetime
 import re
-import urllib
-
-import requests
 
 import pywikibot
+import requests
 from pywikibot import config2 as config
 
-today = datetime.date.today()
-startdate = today - datetime.timedelta(days=1)
-enddate = startdate - datetime.timedelta(days=2)
+
+class Page(pywikibot.Page):
+    def __init__(self, site, data):
+        self.data = data
+        super().__init__(site, data['title'])
+
+    def put_transcludedin(self, data: dict):
+        self.transcludedin_list = data[str(self.pageid)]['transcludedin'] if str(self.pageid) in data else None
+
+    @property
+    def oldest_rev_id(self) -> int:
+        return self.data['revid']
+
+    @property
+    def page_id(self) -> int:
+        return self.data['pageid']
+
+    @property
+    def oldest_rev_timestamp(self) -> datetime:
+        return datetime.datetime.strptime(self.data['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
+
+    @property
+    def size(self) -> int:
+        return self.data['newlen']
+
+    @property
+    def is_redirect(self) -> bool:
+        return True if self.data.get('') == '' else False
+
+    @property
+    def user(self) -> str:
+        return self.data['user']
+
+    @property
+    def user_id(self) -> int:
+        return self.data['userid']
+
+    @property
+    def transcludedin(self) -> bool:
+        return bool(self.transcludedin_list)
+
+    @property
+    def transcludedin_number(self) -> int:
+        return len(self.transcludedin_list)
 
 
 def get_day_of_week_jp(dt):
@@ -21,15 +60,19 @@ def get_day_of_week_jp(dt):
 
 
 def apirequest(params):
-    s = requests.Session()
     url = 'https://ja.wikipedia.org/w/api.php'
-    r = s.get(url=url, params=params)
-    data = r.json()
-    return data
+    r = requests.get(url=url, params=params)
+    return r.json()
 
 
 def main():
+    site = pywikibot.Site(user='YuukinBot2')
+    site.login()
     pywikibot.bot.writeToCommandLogFile()
+
+    today = datetime.date.today()
+    startdate = today - datetime.timedelta(days=1)
+    enddate = startdate - datetime.timedelta(days=2)
 
     newpages_params = {
         'action': 'query',
@@ -40,7 +83,7 @@ def main():
         'rcend': str(enddate) + 'T15:00:00.000Z',
         'rcdir': 'older',
         'rcnamespace': '4',
-        'rcprop': 'title|ids|timestamp|sizes|user|userid',
+        'rcprop': 'title|ids|timestamp|sizes|redirect|user|userid',
         'rclimit': 'max',
         'rctype': 'new'
     }
@@ -48,14 +91,14 @@ def main():
     data = apirequest(newpages_params)
     newpages = data['query']['recentchanges']
 
-    new_afd_pages = [e for e in newpages if re.match(r'Wikipedia:削除依頼/[^(ログ)]', str(e['title']))]
+    new_afd_pages = [Page(site, p) for p in newpages if re.match(r'Wikipedia:削除依頼/[^(ログ)]', str(p['title']))]
 
     transcludedin_params = {
         'action': 'query',
         'format': 'json',
         'prop': 'transcludedin',
         'rawcontinue': 1,
-        'pageids': '|'.join(map(str, [e['pageid'] for e in new_afd_pages])),
+        'pageids': '|'.join(map(str, [p.pageid for p in new_afd_pages])),
         'utf8': 1,
         'tiprop': 'title',
         'tinamespace': '4',
@@ -65,49 +108,32 @@ def main():
 
     data = apirequest(transcludedin_params)
     transcludedin_list = data['query']['pages']
+    for p in new_afd_pages:
+        p.put_transcludedin(transcludedin_list)
 
-    pageids = [e['pageid'] for e in new_afd_pages]
-    revids = [e['revid'] for e in new_afd_pages]
-    timestamps = [e['timestamp'] for e in new_afd_pages]
-    sizes = [e['newlen'] for e in new_afd_pages]
-    users = [e['user'] for e in new_afd_pages]
-    userids = [e['userid'] for e in new_afd_pages]
-
-    i = 0
     check_transcludedin = False
     entries = ''
 
-    for e in new_afd_pages:
-        t = transcludedin_list[str(pageids[i])]
+    for p in new_afd_pages:
+        date = f'{p.oldest_rev_timestamp.year}年{p.oldest_rev_timestamp.month}月{p.oldest_rev_timestamp.day}日'\
+            f' ({get_day_of_week_jp(p.oldest_rev_timestamp)}) '
+        time = p.oldest_rev_timestamp.strftime('%R')
+        id_and_time = f'{{{{oldid|{str(p.oldest_rev_id)}|{date}{time} (UTC)}}}}'
 
-        time_datetime = datetime.datetime.strptime(
-            timestamps[i], '%Y-%m-%dT%H:%M:%SZ')
-        date = f'{time_datetime.year}年{time_datetime.month}月{time_datetime.day}日 ({get_day_of_week_jp(time_datetime)}) '
-        time = time_datetime.strftime('%R')
-        id_and_time = f'{{{{oldid|{str(revids[i])}|{date}{time} (UTC)}}}}'
+        user = f'{{{{IPuser|{p.user}}}}}' if p.user_id == 0 else f'{{{{User|{p.user}}}}}'
 
-        title = t['title']
-        underbar_title = title.replace(' ', '_')
-        url_encoded_title = urllib.parse.quote(underbar_title)
-        no_namespace_title = title.replace('Wikipedia:', '', 1)
-
-        size = str(sizes[i])
-
-        user = f'{{{{IPuser|{users[i]}}}}}' if userids[i] == 0 else f'{{{{User|{users[i]}}}}}'
-
-        if 'transcludedin' in t:
-            length = str(len(t['transcludedin']))
-            transcludedin = f'参照読み込み: {{{{Fullurl|n=特別:リンク元|p=target={url_encoded_title}&hideredirs=1&hidelinks=1&namespace=4|s={length} ページ}}}}'
+        if p.transcludedin:
+            transcludedin = f'参照読み込み: {{{{Fullurl|n=特別:リンク元'\
+                f'|p=target={p.title(underscore=True)}&hideredirs=1&hidelinks=1&namespace=4'\
+                f'|s={p.transcludedin_number} ページ}}}}'
         else:
             transcludedin = f'<span style=\"color:red\">\'\'\'参照読み込み: </span>{{{{Fullurl|n=特別:リンク元'\
-                f'|p=target={underbar_title}&hideredirs=1&hidelinks=1&namespace=4'\
+                f'|p=target={p.title(underscore=True)}&hideredirs=1&hidelinks=1&namespace=4'\
                 '|s=<span style=\"color:red\">0 ページ</span>}}\'\'\''
             check_transcludedin = True
 
-        entry = f'* {id_and_time} . . {{{{P|Wikipedia|{no_namespace_title}}}}} [{size}バイト] {user} {transcludedin}'
+        entry = f'* {id_and_time} . . {{{{P|Wikipedia|{p.title(with_ns=False)}}}}} [{p.size}バイト] {user} {transcludedin}'
         entries += '\n' + entry
-
-        i = i + 1
 
     pywikibot.output('一覧を生成しました。')
     pywikibot.output(entries)
@@ -117,17 +143,12 @@ def main():
         log = f'[[Wikipedia:削除依頼/ログ/{today.year}年{today.month}月{today.day}日]]'
         period = f'{enddate.year}年{enddate.month}月{enddate.day}日 ({get_day_of_week_jp(enddate)}) 15:00 (UTC) - '\
             f'{startdate.year}年{startdate.month}月{startdate.day}日 ({get_day_of_week_jp(startdate)}) 15:00 (UTC)'
-
         out_text = f'{summary}\n掲示先: {log}\n:集計期間: {period}\n{entries}'
 
         pywikibot.output('\n参照読み込みされていないページがあります！\n[[利用者:YuukinBot2/最近の削除依頼]] へと結果を投稿します。')
-
         config.put_throttle = 0
-        site = pywikibot.Site(user='YuukinBot2')
-        site.login()
 
         page = pywikibot.Page(site, '利用者:YuukinBot2/最近の削除依頼')
-
         page.text = out_text
         page.save(summary='Botによる: 最近作成された [[WP:AfD|削除依頼]] の一覧を生成', minor=False)
 
