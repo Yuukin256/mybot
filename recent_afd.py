@@ -15,7 +15,7 @@ class Page(pywikibot.Page):
         super().__init__(site, data['title'])
 
     def put_transcludedin(self, data: dict):
-        self.transcludedin_list = data[str(self.pageid)]['transcludedin'] if str(self.pageid) in data else None
+        self.transcludedin_list = data[str(self.pageid)]['transcludedin'] if 'transcludedin' in data[str(self.pageid)] else None
 
     @property
     def oldest_rev_id(self) -> int:
