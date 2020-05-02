@@ -15,7 +15,8 @@ class Page(pywikibot.Page):
         super().__init__(site, data['title'])
 
     def put_transcludedin(self, data: dict):
-        self.transcludedin_list = data[str(self.pageid)]['transcludedin'] if 'transcludedin' in data[str(self.pageid)] else None
+        self.transcludedin_list = data[str(
+            self.pageid)]['transcludedin'] if 'transcludedin' in data[str(self.pageid)] else None
 
     @property
     def oldest_rev_id(self) -> int:
@@ -127,7 +128,7 @@ def main():
                 f'|p=target={p.title(underscore=True)}&hideredirs=1&hidelinks=1&namespace=4'\
                 f'|s={p.transcludedin_number} ページ}}}}'
         else:
-            transcludedin = f'<span style=\"color:red\">\'\'\'参照読み込み: </span>{{{{Fullurl|n=特別:リンク元'\
+            transcludedin = f'\'\'\'<span style=\"color:red\">参照読み込み: </span>{{{{Fullurl|n=特別:リンク元'\
                 f'|p=target={p.title(underscore=True)}&hideredirs=1&hidelinks=1&namespace=4'\
                 '|s=<span style=\"color:red\">0 ページ</span>}}\'\'\''
             check_transcludedin = True
