@@ -91,8 +91,8 @@ def main():
 
     data = apirequest(newpages_params)
     newpages = data['query']['recentchanges']
-
-    new_afd_pages = [Page(site, p) for p in newpages if re.match(r'Wikipedia:削除依頼/[^(ログ)]', str(p['title']))]
+    new_afd_pages = [Page(site, p) for p in newpages if re.match(
+        r'Wikipedia:削除依頼/[^(ログ)]', str(p['title'])) and 'redirect' not in p]
 
     transcludedin_params = {
         'action': 'query',
@@ -119,7 +119,7 @@ def main():
         date = f'{p.oldest_rev_timestamp.year}年{p.oldest_rev_timestamp.month}月{p.oldest_rev_timestamp.day}日'\
             f' ({get_day_of_week_jp(p.oldest_rev_timestamp)}) '
         time = p.oldest_rev_timestamp.strftime('%R')
-        id_and_time = f'{{{{oldid|{str(p.oldest_rev_id)}|{date}{time} (UTC)}}}}'
+        id_and_time = f'{{{{oldid|{p.oldest_rev_id}|{date}{time} (UTC)}}}}'
 
         user = f'{{{{IPuser|{p.user}}}}}' if p.user_id == 0 else f'{{{{User|{p.user}}}}}'
 
