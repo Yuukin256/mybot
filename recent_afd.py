@@ -121,19 +121,21 @@ def main():
         time = p.oldest_rev_timestamp.strftime('%R')
         id_and_time = f'{{{{oldid|{p.oldest_rev_id}|{date}{time} (UTC)}}}}'
 
+        title = p.title().replace('=', '{{=}}')
+        title_underscore = p.title(underscore=True).replace('=', '{{=}}')
         user = f'{{{{IPuser|{p.user}}}}}' if p.user_id == 0 else f'{{{{User|{p.user}}}}}'
 
         if p.transcludedin:
             transcludedin = f'参照読み込み: {{{{Fullurl|n=特別:リンク元'\
-                f'|p=target={p.title(underscore=True)}&hideredirs=1&hidelinks=1&namespace=4'\
+                f'|p=target={title_underscore}&hideredirs=1&hidelinks=1&namespace=4'\
                 f'|s={p.transcludedin_number} ページ}}}}'
         else:
             transcludedin = f'\'\'\'<span style=\"color:red\">参照読み込み: </span>{{{{Fullurl|n=特別:リンク元'\
-                f'|p=target={p.title(underscore=True)}&hideredirs=1&hidelinks=1&namespace=4'\
+                f'|p=target={title_underscore}&hideredirs=1&hidelinks=1&namespace=4'\
                 '|s=<span style=\"color:red\">0 ページ</span>}}\'\'\''
             check_transcludedin = True
 
-        entry = f'* {id_and_time} . . {{{{P|Wikipedia|{p.title(with_ns=False)}}}}} [{p.size}バイト] {user} {transcludedin}'
+        entry = f'* {id_and_time} . . {{{{Page|{title}}}}} [{p.size}バイト] {user} {transcludedin}'
         entries += '\n' + entry
 
     pywikibot.output('一覧を生成しました。')
