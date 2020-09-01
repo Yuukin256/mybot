@@ -116,6 +116,9 @@ def main():
     entries = ''
 
     for p in new_afd_pages:
+        if not p.exists():
+            continue
+
         date = f'{p.oldest_rev_timestamp.year}年{p.oldest_rev_timestamp.month}月{p.oldest_rev_timestamp.day}日'\
             f' ({get_day_of_week_jp(p.oldest_rev_timestamp)}) '
         time = p.oldest_rev_timestamp.strftime('%R')
