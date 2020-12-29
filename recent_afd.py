@@ -135,7 +135,7 @@ def main():
         else:
             transcludedin = f'\'\'\'<span style=\"color:red\">参照読み込み: </span>{{{{Fullurl|n=特別:リンク元'\
                 f'|p=target={title_underscore}&hideredirs=1&hidelinks=1&namespace=4'\
-                '|s=<span style=\"color:red\">0 ページ</span>}}\'\'\''
+                '|s=<span style=\"color:red\">0 ページ</span>|t=}}\'\'\''
             check_transcludedin = True
 
         entry = f'* {id_and_time} . . {{{{Page|{title}}}}} [{p.size}バイト] {user} {transcludedin}'
